@@ -8,6 +8,12 @@ python -m http.server 8080
 ```
 Open http://localhost:8080. While `config.js` still has the `YOUR-` placeholders, the app runs local-only (no sign-in, no sync).
 
+## Features (v2)
+Drag to reorder (grip handle, or Alt+Up/Down), group + color + deadline per task, glowing red overdue/today deadlines, and All / Groups / Deadlines views. See `PLAN-v2.md`.
+
+## Upgrading an existing database
+Run `supabase/migration-v2.sql` in the Supabase SQL editor **before** deploying v2.
+
 ## Turn on sync
 1. Create a Supabase project. Put its URL and anon key in `config.js`.
 2. In Authentication, turn off "Allow new users to sign up" and add yourself as a user (auto confirm).

@@ -6,10 +6,15 @@ create table if not exists public.tasks (
   done          boolean not null default false,
   created_at    timestamptz not null default now(),
   updated_at    timestamptz not null default now(),     -- set by the client on every change (last-write-wins)
-  completed_at  timestamptz
+  completed_at  timestamptz,
+  position      double precision not null default -(extract(epoch from now()) * 1000),  -- manual order, lower = higher
+  grp           text not null default '' check (char_length(grp) <= 40),
+  color         text not null default '',
+  deadline      date
 );
 
 create index if not exists tasks_user_idx on public.tasks (user_id, done, created_at desc);
+create index if not exists tasks_user_pos_idx on public.tasks (user_id, done, position);
 
 alter table public.tasks enable row level security;
 

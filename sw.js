@@ -1,6 +1,6 @@
-const CACHE = 'todo-v1'; // bump on every deploy
+const CACHE = 'todo-v2'; // bump on every deploy
 const SHELL = [
-  './', 'index.html', 'styles.css', 'app.js', 'store.js', 'db.js', 'config.js',
+  './', 'index.html', 'styles.css', 'app.js', 'store.js', 'db.js', 'config.js', 'drag.js', 'drag.css',
   'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png',
 ];
 

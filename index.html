@@ -15,6 +15,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500&family=IBM+Plex+Mono:wght@500&family=IBM+Plex+Sans:wght@400;600&family=Inter+Tight:wght@800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="drag.css">
 <script type="module" src="app.js"></script>
 </head>
 <body>
@@ -49,6 +50,42 @@
       <button type="button" data-tab="done">Done <span id="n-done">0</span></button>
     </nav>
 
+    <section id="views" class="views" aria-label="Views">
+      <div class="vrow">
+        <span class="eyebrow">View</span>
+        <div class="seg" id="view-seg" role="group" aria-label="View">
+          <button type="button" data-view="all">All</button>
+          <button type="button" data-view="groups">Groups</button>
+          <button type="button" data-view="deadlines">Deadlines</button>
+        </div>
+        <span id="showing" class="showing" hidden></span>
+      </div>
+      <div id="group-chips" class="vrow chips" hidden></div>
+      <div id="dl-controls" hidden>
+        <div class="vrow">
+          <span class="eyebrow">Sort</span>
+          <div class="seg" id="sort-seg" role="group" aria-label="Sort">
+            <button type="button" data-sort="asc">Soonest</button>
+            <button type="button" data-sort="desc">Latest</button>
+          </div>
+        </div>
+        <div class="vrow">
+          <span class="eyebrow">Filter</span>
+          <div class="seg" id="filter-seg" role="group" aria-label="Filter">
+            <button type="button" data-filter="all">All</button>
+            <button type="button" data-filter="overdue">Overdue</button>
+            <button type="button" data-filter="today">Today</button>
+            <button type="button" data-filter="week">This week</button>
+            <button type="button" data-filter="custom">Custom</button>
+          </div>
+        </div>
+        <div class="vrow" id="custom-range" hidden>
+          <label class="eyebrow" for="f-from">From</label><input id="f-from" type="date">
+          <label class="eyebrow" for="f-to">To</label><input id="f-to" type="date">
+        </div>
+      </div>
+    </section>
+
     <ul id="task-list" class="tasks"></ul>
     <p id="empty" class="hand empty" hidden></p>
 
@@ -63,6 +100,23 @@
     <input id="d-title" class="d-title" type="text" maxlength="500" aria-label="Title">
     <label class="eyebrow" for="d-notes">Notes</label>
     <textarea id="d-notes" rows="8" placeholder="Add details any time…"></textarea>
+    <div class="field">
+      <label class="eyebrow" for="d-group">Group</label>
+      <input id="d-group" type="text" list="groups-list" maxlength="40" placeholder="No group" autocomplete="off">
+      <datalist id="groups-list"></datalist>
+    </div>
+    <div class="field">
+      <span class="eyebrow" id="d-color-label">Color</span>
+      <div id="d-colors" class="swatches" role="radiogroup" aria-labelledby="d-color-label"></div>
+    </div>
+    <div class="field">
+      <label class="eyebrow" for="d-deadline">Deadline</label>
+      <div class="dl-row">
+        <input id="d-deadline" type="date">
+        <button type="button" id="d-dl-clear" class="btn btn-small">Clear</button>
+      </div>
+      <span id="d-dl-chip" class="dl-chip big" hidden></span>
+    </div>
     <p id="d-meta" class="eyebrow dim"></p>
     <button type="button" id="d-delete" class="btn btn-danger">Delete</button>
   </aside>

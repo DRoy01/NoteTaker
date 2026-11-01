@@ -5,7 +5,7 @@ export const sb = createClient(SUPABASE_URL, SUPABASE_KEY, {
   auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false },
 });
 
-const COLS = 'id,title,notes,done,created_at,updated_at,completed_at';
+const COLS = 'id,title,notes,done,created_at,updated_at,completed_at,position,grp,color,deadline';
 
 export async function getSession() {
   const { data } = await sb.auth.getSession();

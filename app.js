@@ -1,8 +1,10 @@
 import * as store from './store.js';
 import { SUPABASE_URL } from './config.js';
+import { enableDrag } from './drag.js';
 
 const $ = id => document.getElementById(id);
 const LOCAL_MODE = SUPABASE_URL.includes('YOUR-');
+const ALL_KEY = '\u0000all';
 
 let db = null;
 let tab = 'open';
@@ -11,6 +13,31 @@ let saveTimer = null;
 let toastTimer = null;
 let undoTask = null;
 let rafPending = false;
+
+/* ---------- view state (persisted) ---------- */
+const VIEW_KEY = 'todo.view.v1';
+const DEFAULT_VIEW = { view: 'all', group: null, sort: 'asc', filter: 'all', from: '', to: '' };
+let vs = loadView();
+
+function loadView() {
+  const v = { ...DEFAULT_VIEW };
+  try {
+    const o = JSON.parse(localStorage.getItem(VIEW_KEY) || 'null');
+    if (o && typeof o === 'object') {
+      if (['all', 'groups', 'deadlines'].includes(o.view)) v.view = o.view;
+      if (o.group === null || typeof o.group === 'string') v.group = o.group;
+      if (['asc', 'desc'].includes(o.sort)) v.sort = o.sort;
+      if (['all', 'overdue', 'today', 'week', 'custom'].includes(o.filter)) v.filter = o.filter;
+      if (typeof o.from === 'string') v.from = o.from;
+      if (typeof o.to === 'string') v.to = o.to;
+    }
+  } catch {}
+  return v;
+}
+function saveView() { try { localStorage.setItem(VIEW_KEY, JSON.stringify(vs)); } catch {} }
+const canDrag = () => tab === 'open' && vs.view !== 'deadlines';
+const filterActive = () =>
+  (vs.view === 'groups' && vs.group !== null) || (vs.view === 'deadlines' && vs.filter !== 'all');
 
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('./sw.js').catch(() => {});
@@ -35,14 +62,88 @@ function render() {
   pill.dataset.status = s;
   pill.lastElementChild.textContent = s === 'saving' ? 'Saving…' : s === 'offline' ? 'Offline' : 'Synced';
 
+  // a saved group that no longer exists falls back to ALL
+  if (vs.group !== null) {
+    const ok = vs.group === '' ? open.some(t => !t.grp) : store.getGroups().some(g => g.name === vs.group);
+    if (!ok) { vs.group = null; saveView(); }
+  }
+
   const list = $('task-list');
-  const rows = tab === 'open' ? open : done;
-  list.replaceChildren(...rows.map(rowEl));
+  const filtered = tab === 'open' ? store.query(vs) : null;
+  const rows = tab === 'open' ? filtered : done;
+  const kids = [];
+  let dividerDone = false;
+  for (const t of rows) {
+    if (tab === 'open' && vs.view === 'deadlines' && !t.deadline && !dividerDone) {
+      dividerDone = true;
+      const d = document.createElement('li');
+      d.className = 'divider';
+      d.setAttribute('role', 'presentation');
+      d.textContent = 'No deadline';
+      kids.push(d);
+    }
+    kids.push(rowEl(t));
+  }
+  const ae = document.activeElement;
+  const gripId = ae && ae.classList && ae.classList.contains('grip') ? ae.closest('li')?.dataset.id : null;
+  list.replaceChildren(...kids);
+  if (gripId) list.querySelector(`li[data-id="${CSS.escape(gripId)}"] .grip`)?.focus();
+  list.classList.toggle('no-drag', !canDrag());
   const empty = $('empty');
   empty.hidden = rows.length > 0;
-  empty.textContent = tab === 'open' ? 'Nothing on your mind. Nice.' : 'Finished tasks land here.';
+  empty.textContent = tab === 'done' ? 'Finished tasks land here.'
+    : open.length ? 'Nothing matches.' : 'Nothing on your mind. Nice.';
 
+  renderViews(open, filtered);
   renderPanel();
+}
+
+function renderViews(open, filtered) {
+  const bar = $('views');
+  bar.hidden = tab !== 'open';
+  if (bar.hidden) return;
+  document.querySelectorAll('#view-seg button').forEach(b => b.classList.toggle('on', b.dataset.view === vs.view));
+  document.querySelectorAll('#sort-seg button').forEach(b => b.classList.toggle('on', b.dataset.sort === vs.sort));
+  document.querySelectorAll('#filter-seg button').forEach(b => b.classList.toggle('on', b.dataset.filter === vs.filter));
+  $('dl-controls').hidden = vs.view !== 'deadlines';
+  $('custom-range').hidden = vs.view !== 'deadlines' || vs.filter !== 'custom';
+  if (document.activeElement !== $('f-from')) $('f-from').value = vs.from;
+  if (document.activeElement !== $('f-to')) $('f-to').value = vs.to;
+
+  const chips = $('group-chips');
+  chips.hidden = vs.view !== 'groups';
+  if (!chips.hidden) {
+    const mk = (name, label, n) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'gchip' + (vs.group === name ? ' on' : '');
+      b.dataset.group = name === null ? ALL_KEY : name;
+      b.setAttribute('aria-pressed', String(vs.group === name));
+      b.append(label);
+      const c = document.createElement('span');
+      c.textContent = n;
+      b.appendChild(c);
+      return b;
+    };
+    const ungrouped = open.filter(t => !t.grp).length;
+    const items = [mk(null, 'All', open.length)];
+    for (const g of store.getGroups()) items.push(mk(g.name, g.name, g.open));
+    if (ungrouped || vs.group === '') items.push(mk('', 'Ungrouped', ungrouped));
+    chips.replaceChildren(...items);
+  }
+  const sh = $('showing');
+  sh.hidden = !filterActive();
+  sh.textContent = 'SHOWING ' + filtered.length;
+}
+
+function chipEl(t) {
+  const info = store.deadlineInfo(t.deadline);
+  if (!info) return null;
+  const lvl = t.done ? 'later' : info.level;
+  const c = document.createElement('span');
+  c.className = 'dl-chip lvl-' + lvl;
+  c.textContent = info.label;
+  return c;
 }
 
 function rowEl(t) {
@@ -50,6 +151,7 @@ function rowEl(t) {
   li.dataset.id = t.id;
   if (t.done) li.classList.add('done');
   if (t.id === openId) li.classList.add('selected');
+  if (t.color && store.COLORS[t.color]) li.style.setProperty('--stripe', store.COLORS[t.color]);
 
   const cb = document.createElement('button');
   cb.type = 'button';
@@ -63,11 +165,31 @@ function rowEl(t) {
   title.textContent = t.title;
 
   li.append(cb, title);
+
+  const meta = document.createElement('span');
+  meta.className = 'meta';
+  if (t.grp) {
+    const g = document.createElement('span');
+    g.className = 'chip';
+    g.textContent = t.grp;
+    meta.appendChild(g);
+  }
+  const dc = chipEl(t);
+  if (dc) meta.appendChild(dc);
+  if (meta.firstChild) li.appendChild(meta);
+
   if (t.notes && t.notes.trim()) {
     const m = document.createElement('span');
     m.className = 'note-mark';
     m.textContent = '¶';
     li.appendChild(m);
+  }
+  if (canDrag()) {
+    const g = document.createElement('button');
+    g.type = 'button';
+    g.className = 'grip';
+    g.setAttribute('aria-label', 'Drag to reorder');
+    li.appendChild(g);
   }
   return li;
 }
@@ -87,6 +209,24 @@ function renderPanel() {
   // don't clobber text the user is typing (store rule 6)
   if (document.activeElement !== $('d-title')) $('d-title').value = t.title;
   if (document.activeElement !== $('d-notes')) { $('d-notes').value = t.notes; autoGrow(); }
+
+  const names = store.getGroups().map(g => g.name);
+  const sig = names.join('\u0000');
+  const dl = $('groups-list');
+  if (dl.dataset.sig !== sig) {
+    dl.dataset.sig = sig;
+    dl.replaceChildren(...names.map(n => { const o = document.createElement('option'); o.value = n; return o; }));
+  }
+  if (document.activeElement !== $('d-group')) $('d-group').value = t.grp || '';
+  document.querySelectorAll('#d-colors .sw').forEach(b =>
+    b.setAttribute('aria-checked', String(b.dataset.color === (t.color || ''))));
+  if (document.activeElement !== $('d-deadline')) $('d-deadline').value = t.deadline || '';
+  const chip = $('d-dl-chip');
+  const dc = chipEl(t);
+  chip.hidden = !dc;
+  if (dc) { chip.className = dc.className + ' big'; chip.textContent = dc.textContent; }
+  $('d-dl-clear').hidden = !t.deadline;
+
   const d = new Date(t.created_at);
   $('d-meta').textContent = 'Added ' + d.toLocaleDateString(undefined, { day: 'numeric', month: 'short' }) +
     ' · ' + d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
@@ -149,7 +289,7 @@ function bind() {
 
   $('task-list').addEventListener('click', e => {
     const li = e.target.closest('li');
-    if (!li) return;
+    if (!li || !li.dataset.id || e.target.closest('.grip')) return;
     if (e.target.closest('[data-act="toggle"]')) {
       store.toggleDone(li.dataset.id);
     } else {
@@ -171,6 +311,48 @@ function bind() {
     if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) closePanel();
   });
   $('panel-close').addEventListener('click', () => closePanel());
+
+  // group / color / deadline save immediately
+  const patchOpen = patch => { if (openId) store.updateTask(openId, patch); };
+  $('d-group').addEventListener('change', () => patchOpen({ grp: $('d-group').value.trim().slice(0, 40) }));
+  $('d-deadline').addEventListener('change', () => patchOpen({ deadline: $('d-deadline').value || null }));
+  $('d-dl-clear').addEventListener('click', () => { $('d-deadline').value = ''; patchOpen({ deadline: null }); });
+  const mkSw = (key, hex, label) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'sw' + (key ? '' : ' none');
+    b.dataset.color = key;
+    b.setAttribute('role', 'radio');
+    b.setAttribute('aria-checked', 'false');
+    b.setAttribute('aria-label', label);
+    const i = document.createElement('i');
+    if (hex) i.style.setProperty('--c', hex);
+    b.appendChild(i);
+    return b;
+  };
+  const sw = $('d-colors');
+  sw.append(...Object.entries(store.COLORS).map(([k, h]) => mkSw(k, h, k)), mkSw('', '', 'No color'));
+  sw.addEventListener('click', e => {
+    const b = e.target.closest('.sw');
+    if (b) patchOpen({ color: b.dataset.color });
+  });
+
+  // views bar
+  const upd = patch => { Object.assign(vs, patch); saveView(); render(); };
+  $('view-seg').addEventListener('click', e => { const b = e.target.closest('button'); if (b) upd({ view: b.dataset.view }); });
+  $('sort-seg').addEventListener('click', e => { const b = e.target.closest('button'); if (b) upd({ sort: b.dataset.sort }); });
+  $('filter-seg').addEventListener('click', e => { const b = e.target.closest('button'); if (b) upd({ filter: b.dataset.filter }); });
+  $('group-chips').addEventListener('click', e => {
+    const b = e.target.closest('button');
+    if (b) upd({ group: b.dataset.group === ALL_KEY ? null : b.dataset.group });
+  });
+  $('f-from').addEventListener('change', () => upd({ from: $('f-from').value }));
+  $('f-to').addEventListener('change', () => upd({ to: $('f-to').value }));
+
+  enableDrag($('task-list'), {
+    onMove: (id, beforeId, afterId) => { store.moveTask(id, beforeId, afterId); scheduleRender(); },
+    canDrag,
+  });
 
   $('d-delete').addEventListener('click', () => {
     if (!openId) return;
