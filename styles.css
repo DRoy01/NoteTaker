@@ -184,15 +184,17 @@ textarea { resize: none; line-height: 1.55; display: block; }
 .tasks li:hover .chip, .tasks li.selected .chip { background: var(--surface); }
 .dl-chip { font-weight: 700; display: inline-block; }
 .dl-chip.lvl-later { color: var(--muted); padding-left: 0; padding-right: 0; }
-.dl-chip.lvl-soon { color: var(--amber); border: 1px solid var(--amber); padding: 1px 7px; }
-.dl-chip.lvl-today, .dl-chip.lvl-overdue {
-  background: #e0113f; color: #fff;
-  box-shadow: 0 0 0 1px #ff2d55, 0 0 12px 2px rgba(255,45,85,.75);
+/* glowing urgency: red = overdue, orange = today, yellow = next 3 days */
+.dl-chip.lvl-overdue { background: #e0113f; color: #fff; --glow: 255,45,85; }
+.dl-chip.lvl-today   { background: #ff7a00; color: #1a0d00; --glow: 255,122,0; }
+.dl-chip.lvl-soon    { background: #ffd60a; color: #1a1400; --glow: 255,214,10; }
+.dl-chip.lvl-overdue, .dl-chip.lvl-today, .dl-chip.lvl-soon {
+  box-shadow: 0 0 0 1px rgb(var(--glow)), 0 0 12px 2px rgba(var(--glow), .75);
 }
 .dl-chip.lvl-overdue { animation: dl-pulse 1.6s ease-in-out infinite; }
 @keyframes dl-pulse {
-  0%, 100% { box-shadow: 0 0 0 1px #ff2d55, 0 0 12px 2px rgba(255,45,85,.75); }
-  50% { box-shadow: 0 0 0 1px #ff2d55, 0 0 6px 1px rgba(255,45,85,.35); }
+  0%, 100% { box-shadow: 0 0 0 1px rgb(var(--glow)), 0 0 12px 2px rgba(var(--glow), .75); }
+  50% { box-shadow: 0 0 0 1px rgb(var(--glow)), 0 0 6px 1px rgba(var(--glow), .35); }
 }
 .dl-chip.big { font-size: 13px; align-self: flex-start; padding: 3px 10px; }
 .dl-chip.big.lvl-later { padding-left: 0; }
