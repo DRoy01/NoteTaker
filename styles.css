@@ -73,6 +73,18 @@ textarea { resize: none; line-height: 1.55; display: block; }
 /* layout */
 .app { display: grid; grid-template-columns: minmax(0, 1fr); max-width: 760px; margin: 0 auto; padding: 28px 16px 80px; gap: 32px; }
 .top { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.top-right { display: flex; align-items: center; gap: 16px; min-width: 0; }
+.user { display: inline-flex; align-items: center; gap: 8px; min-width: 0; font: 500 12px var(--font-mono); text-transform: uppercase; letter-spacing: .14em; color: var(--text); }
+.user b {
+  flex: none; width: 22px; height: 22px; border-radius: 50%; background: var(--amber); color: #1a1409;
+  display: grid; place-items: center; font: 700 11px var(--font-mono); letter-spacing: 0;
+}
+#user-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 18ch; }
+#count-label { white-space: nowrap; }
+@media (max-width: 520px) {
+  .top { flex-wrap: wrap; row-gap: 10px; }
+  .top-right { order: -1; width: 100%; justify-content: space-between; }
+}
 .pill {
   font: 500 11px var(--font-mono); text-transform: uppercase; letter-spacing: .14em; color: var(--muted);
   display: inline-flex; align-items: center; gap: 8px;

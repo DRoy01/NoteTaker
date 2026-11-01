@@ -397,7 +397,7 @@ function bind() {
     if (error) { $('si-error').textContent = error.message; return; }
     $('si-pass').value = '';
     const session = await db.getSession();
-    if (session) startApp(session.user.id);
+    if (session) startApp(session.user.id, session.user.email);
   });
 }
 
@@ -413,10 +413,19 @@ function showSignIn() {
   $('view-signin').hidden = false;
 }
 
-async function startApp(userId) {
+function showUser(email) {
+  const name = LOCAL_MODE ? 'Local' : (email || '').split('@')[0];
+  $('username').hidden = !name;
+  $('user-name').textContent = name;
+  $('user-initial').textContent = name.charAt(0).toUpperCase();
+  $('username').title = email || '';
+}
+
+async function startApp(userId, email) {
   $('view-signin').hidden = true;
   $('view-list').hidden = false;
   $('signout').hidden = LOCAL_MODE;
+  showUser(email);
   await store.init(db, userId, scheduleRender);
 }
 
@@ -428,7 +437,7 @@ async function main() {
   }
   db = await import('./db.js');
   const session = await db.getSession().catch(() => null);
-  if (session) startApp(session.user.id); else showSignIn();
+  if (session) startApp(session.user.id, session.user.email); else showSignIn();
 }
 
 main();
