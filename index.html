@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#11141b">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="To-Do">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<title>To-Do</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500&family=IBM+Plex+Mono:wght@500&family=IBM+Plex+Sans:wght@400;600&family=Inter+Tight:wght@800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<script type="module" src="app.js"></script>
+</head>
+<body>
+
+<main id="view-signin" class="signin" hidden>
+  <p class="eyebrow">Synced to-do</p>
+  <h1>Sign in</h1>
+  <form id="signin-form" class="card">
+    <input id="si-email" type="email" placeholder="email" autocomplete="username" required>
+    <input id="si-pass" type="password" placeholder="password" autocomplete="current-password" required>
+    <button type="submit" class="btn btn-primary">Sign in</button>
+    <p id="si-error" class="error" role="alert"></p>
+  </form>
+</main>
+
+<div id="view-list" class="app" hidden>
+  <main class="list-col">
+    <header class="top">
+      <p class="eyebrow" id="count-label">Tasks · 0 open</p>
+      <span id="status-pill" class="pill" data-status="synced"><i></i><span>Synced</span></span>
+    </header>
+    <h1>What's next?</h1>
+
+    <form id="add-form" class="add">
+      <input id="add-input" type="text" placeholder="What's on your mind?" autocomplete="off" enterkeyhint="done">
+      <button type="submit" class="add-btn" aria-label="Add task">+</button>
+    </form>
+    <p class="hand hint">type it, hit enter, done.</p>
+
+    <nav class="tabs">
+      <button type="button" data-tab="open" class="active">Open <span id="n-open">0</span></button>
+      <button type="button" data-tab="done">Done <span id="n-done">0</span></button>
+    </nav>
+
+    <ul id="task-list" class="tasks"></ul>
+    <p id="empty" class="hand empty" hidden></p>
+
+    <footer class="foot"><button type="button" id="signout" class="link">Sign out</button></footer>
+  </main>
+
+  <aside id="panel-detail" class="panel" hidden>
+    <div class="panel-head">
+      <button type="button" id="panel-close" class="link" aria-label="Close"><span class="x-desk">✕</span><span class="x-mob">‹ Back</span></button>
+      <p class="eyebrow">Detail</p>
+    </div>
+    <input id="d-title" class="d-title" type="text" maxlength="500" aria-label="Title">
+    <label class="eyebrow" for="d-notes">Notes</label>
+    <textarea id="d-notes" rows="8" placeholder="Add details any time…"></textarea>
+    <p id="d-meta" class="eyebrow dim"></p>
+    <button type="button" id="d-delete" class="btn btn-danger">Delete</button>
+  </aside>
+</div>
+
+<div id="toast" class="toast" hidden><span id="toast-text"></span><button type="button" id="toast-undo" class="link amber">Undo</button></div>
+
+</body>
+</html>
