@@ -7,7 +7,7 @@ Builds on `PLAN.md` (v1 is live). All v1 rules still apply: no framework, no bui
 |---|---|
 | V1 | **Drag to reorder** Open tasks (mouse and touch). The order is manual and syncs across devices. |
 | V2 | **Detail panel fields**: group (free text with suggestions), label color (8 presets), deadline (date). |
-| V3 | **Highly visible deadlines**: glowing red when overdue or due today, amber when soon, muted otherwise. Shown on the row and in the panel. |
+| V3 | **Highly visible deadlines**: glowing red when overdue, orange when due today, yellow within 7 days, muted otherwise. Shown on the row and in the panel. |
 | V4 | **Browse views**: All · Groups · Deadlines. Groups view filters by group. Deadlines view sorts by date and has quick filters plus a custom date range. |
 
 Out of scope: reminders/notifications, times (date only), nested groups, renaming a group everywhere in one click.
@@ -36,7 +36,7 @@ Task shape adds four fields:
 ### Deadline status helper (exported from `store.js`)
 `deadlineInfo(deadline, today = localTodayString())` → `null` or `{ days, level, label }`
 - `days` = whole calendar days from today to the deadline (negative = overdue).
-- `level`: `'overdue'` (days < 0), `'today'` (0), `'soon'` (1–3), `'later'` (>3).
+- `level`: `'overdue'` (days < 0), `'today'` (0), `'soon'` (1–7), `'later'` (>7).
 - `label`: `'OVERDUE 2D'`, `'TODAY'`, `'TOMORROW'`, `'IN 3D'`, or a short date like `'12 NOV'`.
 - Done tasks never show urgent levels (UI treats them as `'later'`).
 - Use the **local** date, never `toISOString().slice(0,10)`, which is UTC and gives the wrong day.
@@ -84,7 +84,7 @@ create index if not exists tasks_user_pos_idx on public.tasks (user_id, done, po
 - Deadline chip by level, always mono 11px bold uppercase, padding `2px 8px`, radius 6px:
   - `overdue`: background `#ff2d55`, white text, **glow** `box-shadow: 0 0 0 1px #ff2d55, 0 0 12px 2px rgba(255,45,85,.75)`, slow pulse animation (1.6s, opacity/shadow only). Add the text `OVERDUE Nd`.
   - `today`: same red, solid with glow but no pulse. Text `TODAY`.
-  - `soon`: `--amber` outline and text, no glow.
+  - `today`: orange glow; `soon` (1–7 days): yellow glow.
   - `later`: `--muted` text, no border.
 - Under `prefers-reduced-motion`, keep the glow but drop the pulse.
 - Contrast must be at least 4.5:1 for the chip text. White on `#ff2d55` passes for bold 11px. Verify it.

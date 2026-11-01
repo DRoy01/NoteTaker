@@ -184,7 +184,7 @@ textarea { resize: none; line-height: 1.55; display: block; }
 .tasks li:hover .chip, .tasks li.selected .chip { background: var(--surface); }
 .dl-chip { font-weight: 700; display: inline-block; }
 .dl-chip.lvl-later { color: var(--muted); padding-left: 0; padding-right: 0; }
-/* glowing urgency: red = overdue, orange = today, yellow = next 3 days */
+/* glowing urgency: red = overdue, orange = today, yellow = next 7 days */
 .dl-chip.lvl-overdue { background: #e0113f; color: #fff; --glow: 255,45,85; }
 .dl-chip.lvl-today   { background: #ff7a00; color: #1a0d00; --glow: 255,122,0; }
 .dl-chip.lvl-soon    { background: #ffd60a; color: #1a1400; --glow: 255,214,10; }

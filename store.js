@@ -46,7 +46,7 @@ export function deadlineInfo(deadline, today = localTodayString()) {
   if (days < 0) return { days, level: 'overdue', label: `OVERDUE ${-days}D` };
   if (days === 0) return { days, level: 'today', label: 'TODAY' };
   if (days === 1) return { days, level: 'soon', label: 'TOMORROW' };
-  if (days <= 3) return { days, level: 'soon', label: `IN ${days}D` };
+  if (days <= 7) return { days, level: 'soon', label: `IN ${days}D` };
   return { days, level: 'later', label: `${+deadline.slice(8, 10)} ${MONTHS[+deadline.slice(5, 7) - 1]}` };
 }
 
